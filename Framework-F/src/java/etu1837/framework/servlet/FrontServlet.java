@@ -5,15 +5,22 @@
 package etu1837.framework.servlet;
 
 import etu1837.framework.Mapping;
+import etu1837.framework.ModelView;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Part;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import utilitaire.Utilitaire;
@@ -21,7 +28,7 @@ import utilitaire.Utilitaire;
 
 /**
  *
- * @author Hasinjo
+ * @author Fanyah
  */
 public class FrontServlet extends HttpServlet {
 
@@ -37,19 +44,42 @@ public class FrontServlet extends HttpServlet {
     private HashMap<String, Mapping> mappingUrls = new HashMap<>();
    
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+            throws ServletException, IOException, ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         response.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Servlet FrontServlet</title>");            
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>Servlet FrontServlet at " + request.getContextPath() + "</h1>");
-            out.println("</body>");
-            out.println("</html>");
+            utilitaire.Utilitaire utilitaire = new Utilitaire();
+        /** Recherche du mapping a partir Hasmap  **/
+            Mapping map = utilitaire.get_mapping(mappingUrls, request);
+            if( map != null ){
+                /*** La class et le methode utiliser ***/
+                HashMap<String , Object> class_method =  utilitaire.get_class_method( map );
+            // La class    
+                Class clazz = (Class)class_method.get("class");
+                Object obj = clazz.newInstance();
+                String attribut_name = null;   
+                Field[] attribut = obj.getClass().getDeclaredFields();
+                for (Field field : attribut) {
+                    attribut_name = utilitaire.capitalize(field.getName());    
+                    if(request.getParameter(field.getName())!= null){
+                        try {
+                            obj.getClass().getMethod("set"+attribut_name, String.class).invoke(obj, request.getParameter(field.getName()));
+                        } catch (Exception e) {
+                            out.print(e.getMessage());
+                        }
+                    }
+                }
+                Method method = (Method)class_method.get("method");
+                ModelView view = null;
+                view = (ModelView) method.invoke(obj);
+                if(view != null){
+                    RequestDispatcher dispa = request.getRequestDispatcher(view.getPage());
+                    dispa.forward(request, response);
+                }else{
+                    out.print("Url n'est pa trouvé");
+                }
+            }else{
+                 out.print(" L' URL  entrer n'est pas trouvé ");
+            }
         }
     }
 
@@ -80,7 +110,19 @@ public class FrontServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        processRequest(request, response);
+        try {
+            processRequest(request, response);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalArgumentException ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InvocationTargetException ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     /**
@@ -94,7 +136,19 @@ public class FrontServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        processRequest(request, response);
+        try {
+            processRequest(request, response);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalArgumentException ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InvocationTargetException ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     /**
