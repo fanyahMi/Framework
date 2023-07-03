@@ -36,6 +36,7 @@ import utilitaire.Utilitaire;
 @MultipartConfig
 public class FrontServlet extends HttpServlet {
 
+
     /**
      * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
      * methods.
@@ -45,21 +46,22 @@ public class FrontServlet extends HttpServlet {
      * @throws ServletException if a servlet-specific error occurs
      * @throws IOException if an I/O error occurs
      */
+    
     private HashMap<String, Mapping> mappingUrls = new HashMap<>();
-   
+    private HashMap<String, Object> obj_singleton = new HashMap<>();
+    
     protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException, ClassNotFoundException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+            throws ServletException, IOException, ClassNotFoundException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, InstantiationException, NoSuchMethodException {
         response.setContentType("text/html;charset=UTF-8");
         try (PrintWriter out = response.getWriter()) {
             utilitaire.Utilitaire utilitaire = new Utilitaire();
         /** Recherche du mapping a partir Hasmap  **/
             Mapping map = utilitaire.get_mapping(mappingUrls, request);
             if( map != null ){
-                /*** La class et le methode utiliser ***/
-                HashMap<String , Object> class_method =  utilitaire.get_class_method( map );
+            /*** La class et le methode utiliser ***/
+                HashMap<String , Object> class_method =  utilitaire.get_class_method( map, obj_singleton );
             // La class    
-                Class clazz = (Class)class_method.get("class");
-                Object obj = clazz.newInstance();
+                Object obj = class_method.get("object");
                 String attribut_name = null;   
                 Field[] attribut = obj.getClass().getDeclaredFields();
                 for (Field field : attribut) {
@@ -81,6 +83,8 @@ public class FrontServlet extends HttpServlet {
                         }
                     }
                 }
+                
+            // Le method
                 Method method = (Method)class_method.get("method");
                 Parameter[] parametre = method.getParameters();
                 ModelView view = null;
@@ -109,35 +113,40 @@ public class FrontServlet extends HttpServlet {
                 else {
                     view = (ModelView) method.invoke(obj);
                 }
-                
                 if(view != null){
-                    // Donner envoyer par model view
-                    HashMap<String , Object> data = view.getData();
-                    if( data != null){
-                        for (Map.Entry<String, Object> dt : data.entrySet()) {
-                            String key = dt.getKey();
-                            Object data_view = dt.getValue();
-                            Class class_data = data_view.getClass();
-                            request.setAttribute(key, class_data.cast(data_view));
+                        try {
+                        // Donner envoyer par model view
+                            HashMap<String , Object> data = view.getData();
+                            if( data != null){
+                                for (Map.Entry<String, Object> dt : data.entrySet()) {
+                                    String key = dt.getKey();
+                                    Object data_view = dt.getValue();
+                                    Class class_data = data_view.getClass();
+                                    request.setAttribute(key, class_data.cast(data_view));
+                                }
+                            }
+                            RequestDispatcher dispa = request.getRequestDispatcher(view.getPage());
+                            dispa.forward(request, response);
+                        } catch (Exception e) {
+                            
+                            out.print(e.getMessage());
                         }
                     }
-                    RequestDispatcher dispa = request.getRequestDispatcher(view.getPage());
-                    dispa.forward(request, response);
-                }else{
-                    out.print("Url n'est pa trouvé");
-                }
+                
+                
             }else{
-                 out.print(" L' URL  entrer n'est pas trouvé ");
+                out.print(" L' URL n'est pas trouvé ");
             }
+            
+            
         }
     }
-
     
-     public void init() throws ServletException {
+    public void init() throws ServletException {
         ServletContext context = getServletContext();
         String path = context.getRealPath("/");
         try{
-            this.setMappingUrls( new Utilitaire().set_allMethodAnnotation(path,new File(path+"WEB-INF\\classes\\"),mappingUrls));
+            this.setMappingUrls( new Utilitaire().set_allMethodAnnotation(path,new File(path+"WEB-INF\\classes\\"),mappingUrls, obj_singleton));
         }catch(Exception e){
             try {
                 throw e;
@@ -147,6 +156,23 @@ public class FrontServlet extends HttpServlet {
         }
     }
     
+    public HashMap<String, Mapping> getMappingUrls() {
+        return mappingUrls;
+    }
+
+    public void setMappingUrls(HashMap<String, Mapping> MappingUrls) {
+        this.mappingUrls = MappingUrls;
+    }
+
+    public HashMap<String, Object> getObj_singleton() {
+        return obj_singleton;
+    }
+
+    public void setObj_singleton(HashMap<String, Object> obj_singleton) {
+        this.obj_singleton = obj_singleton;
+    }
+    
+
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
     /**
      * Handles the HTTP <code>GET</code> method.
@@ -163,13 +189,15 @@ public class FrontServlet extends HttpServlet {
             processRequest(request, response);
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IllegalAccessException ex) {
             Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IllegalArgumentException ex) {
             Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
         } catch (InvocationTargetException ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (NoSuchMethodException ex) {
             Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
@@ -189,13 +217,15 @@ public class FrontServlet extends HttpServlet {
             processRequest(request, response);
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IllegalAccessException ex) {
             Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IllegalArgumentException ex) {
             Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
         } catch (InvocationTargetException ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (NoSuchMethodException ex) {
             Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
@@ -209,13 +239,5 @@ public class FrontServlet extends HttpServlet {
     public String getServletInfo() {
         return "Short description";
     }// </editor-fold>
-
-    public HashMap<String, Mapping> getMappingUrls() {
-        return mappingUrls;
-    }
-
-    public void setMappingUrls(HashMap<String, Mapping> mappingUrls) {
-        this.mappingUrls = mappingUrls;
-    }
 
 }
