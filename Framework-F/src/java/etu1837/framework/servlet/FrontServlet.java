@@ -3,17 +3,25 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
  */
 package etu1837.framework.servlet;
-import etu1789.framework.Mapping;
+
+import etu1837.framework.Mapping;
+import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import utilitaire.Utilitaire;
+
 
 /**
  *
- * @author Fanyah
+ * @author Hasinjo
  */
 public class FrontServlet extends HttpServlet {
 
@@ -45,6 +53,21 @@ public class FrontServlet extends HttpServlet {
         }
     }
 
+    
+     public void init() throws ServletException {
+        ServletContext context = getServletContext();
+        String path = context.getRealPath("/");
+        try{
+            this.setMappingUrls( new Utilitaire().set_allMethodAnnotation(path,new File(path+"WEB-INF\\classes\\"),mappingUrls));
+        }catch(Exception e){
+            try {
+                throw e;
+            } catch (Exception ex) {
+                Logger.getLogger(FrontServlet.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+    
     // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
     /**
      * Handles the HTTP <code>GET</code> method.
