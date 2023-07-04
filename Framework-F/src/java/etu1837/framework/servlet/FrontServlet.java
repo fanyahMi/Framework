@@ -72,6 +72,16 @@ public class FrontServlet extends HttpServlet {
                 ModelView view = null;
                 view = (ModelView) method.invoke(obj);
                 if(view != null){
+                    // Donner envoyer par model view
+                    HashMap<String , Object> data = view.getData();
+                    if( data != null){
+                        for (Map.Entry<String, Object> dt : data.entrySet()) {
+                            String key = dt.getKey();
+                            Object data_view = dt.getValue();
+                            Class class_data = data_view.getClass();
+                            request.setAttribute(key, class_data.cast(data_view));
+                        }
+                    }
                     RequestDispatcher dispa = request.getRequestDispatcher(view.getPage());
                     dispa.forward(request, response);
                 }else{
