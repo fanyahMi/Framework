@@ -19,6 +19,7 @@ import java.io.PrintWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -69,8 +70,34 @@ public class FrontServlet extends HttpServlet {
                     }
                 }
                 Method method = (Method)class_method.get("method");
+                Parameter[] parametre = method.getParameters();
                 ModelView view = null;
-                view = (ModelView) method.invoke(obj);
+            
+                if(parametre.length!=0){
+                    Object[] arguments = new Object[parametre.length];
+                    int count = 0;
+                    for (Parameter parameter : parametre) {
+                        if(parameter.isAnnotationPresent(annotation.Parameter.class)){
+                            String val = (parameter.getAnnotation(annotation.Parameter.class)).name();
+                            if(request.getParameter(val)!=null){
+                                Class paramType  = parameter.getType();
+                                arguments[count] = request.getParameter(val);
+                            }else{
+                                arguments[count] = null;
+                            }
+                            count++;    
+                        }
+                    }
+                    try {
+                         view = (ModelView) method.invoke(obj,arguments);
+                    } catch (Exception e) {
+                        out.print(e.getMessage());
+                    }
+                }
+                else {
+                    view = (ModelView) method.invoke(obj);
+                }
+                
                 if(view != null){
                     // Donner envoyer par model view
                     HashMap<String , Object> data = view.getData();
