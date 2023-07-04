@@ -4,11 +4,13 @@
  */
 package etu1837.framework.servlet;
 
+import etu1837.framework.FileUpload;
 import etu1837.framework.Mapping;
 import etu1837.framework.ModelView;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -31,6 +33,7 @@ import utilitaire.Utilitaire;
  *
  * @author Fanyah
  */
+@MultipartConfig
 public class FrontServlet extends HttpServlet {
 
     /**
@@ -60,7 +63,16 @@ public class FrontServlet extends HttpServlet {
                 String attribut_name = null;   
                 Field[] attribut = obj.getClass().getDeclaredFields();
                 for (Field field : attribut) {
-                    attribut_name = utilitaire.capitalize(field.getName());    
+                    attribut_name = utilitaire.capitalize(field.getName());
+                       
+                    if(field.getType().getName().equals("etu1789.framework.FileUpload")){
+                        try {
+                            FileUpload file_upload = new FileUpload();
+                            Part filePart = request.getPart(field.getName());
+                            file_upload.transform_fileupload(filePart);
+                            obj.getClass().getMethod("set"+attribut_name, field.getType() ).invoke(obj, file_upload);
+                        }catch (Exception e) { out.print(e.getMessage()); } 
+                    }
                     if(request.getParameter(field.getName())!= null){
                         try {
                             obj.getClass().getMethod("set"+attribut_name, String.class).invoke(obj, request.getParameter(field.getName()));
